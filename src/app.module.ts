@@ -4,13 +4,17 @@ import { LoggerModule } from './logger/logger.module';
 import { UsersModule } from './users/users.module';
 import { AuthInfraModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
+import { QueueModule } from './common/queue/queue.module';
+import { EmailQueueModule } from './common/queue/email/email-queue.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     LoggerModule,
-    AuthInfraModule,
     DatabaseModule,
+    QueueModule,
+    EmailQueueModule,
+    AuthInfraModule,
     UsersModule,
   ],
 })

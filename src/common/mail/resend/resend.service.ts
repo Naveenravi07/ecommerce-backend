@@ -11,15 +11,13 @@ export class ResendService {
     this.resend = new Resend(apiKey);
   }
 
-  async sendEmailUsingTemplate(to: string, templateId: string, variables?: Record<string, any>) {
+  async sendEmail(to: string, content: string, subject: string) {
     try {
       const data = await this.resend.emails.send({
-        from: 'noreply@notifications.naveenravi.dev', 
+        from: this.configService.getOrThrow('EMAIL_FROM_DOMAIN'), 
         to,
-        template: {
-          id: templateId,
-          variables: variables || {},
-        }
+        subject: subject,
+        html:content
       });
       return data;
     } catch (error) {

@@ -20,15 +20,18 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@thallesp/nestjs-better-auth": "^2.2.0",
     "better-auth": "^1.4.8",
+    "bullmq": "^5.66.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
+    "ioredis": "^5.8.2",
     "nestjs-pino": "^4.5.0",
     "pg": "^8.16.3",
     "pino": "^10.1.0",

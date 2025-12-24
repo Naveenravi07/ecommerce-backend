@@ -1,4 +1,4 @@
-import { Module, Res } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard, AuthModule } from '@thallesp/nestjs-better-auth';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -9,8 +9,10 @@ import { DatabaseModule } from '../database/database.module';
 import { LoggerModule } from '../logger/logger.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PinoLogger } from 'nestjs-pino';
-import { ResendService } from 'src/common/mail/resend/resend.service';
-import { MailModule } from 'src/common/mail/mail.module';
+import { buildVerifyEmailHtml } from 'src/common/mail/templates/verify-email';
+import { openAPI } from 'better-auth/plugins';
+import { EmailQueueService } from 'src/common/queue/email/email-queue.service';
+import { EmailQueueModule } from 'src/common/queue/email/email-queue.module';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -19,20 +21,19 @@ const isDev = process.env.NODE_ENV !== 'production';
     DatabaseModule,
     LoggerModule,
     AuthModule.forRootAsync({
-      imports: [DatabaseModule, LoggerModule,MailModule],
-      inject: [DATABASE_CONNECTION, ConfigService, PinoLogger,ResendService],
+      imports: [DatabaseModule, LoggerModule, EmailQueueModule],
+      inject: [DATABASE_CONNECTION, ConfigService, PinoLogger, EmailQueueService],
       useFactory: (
         database: NodePgDatabase,
         config: ConfigService,
         logger: PinoLogger,
-        resendService: ResendService
+        emailQueueService: EmailQueueService,
       ) => ({
         auth: betterAuth({
           database: drizzleAdapter(database, { provider: 'pg' }),
-
           trustedOrigins: [config.getOrThrow<string>('FRONTEND_URL')],
           secret: config.getOrThrow<string>('BETTER_AUTH_SECRET'),
-
+          plugins:[openAPI()],
           logger: {
             disabled: !isDev,
             level: isDev ? 'info' : 'error',
@@ -65,10 +66,21 @@ const isDev = process.env.NODE_ENV !== 'production';
           },
 
           emailVerification: {
-            sendVerificationEmail: async ({ user, url }) => {
-                resendService.sendEmailUsingTemplate(user.email, 'email-verification', { verificationUrl: url });
+            sendVerificationEmail: async ({ user, url, token }) => {
+              const html = buildVerifyEmailHtml({
+                logoUrl: config.getOrThrow('LOGO_URL'),
+                companyName: config.getOrThrow('COMPANY_NAME'),
+                verificationUrl: url,
+              });
+              
+              await emailQueueService.addEmailJob({
+                to: user.email,
+                subject: 'Please verify your email',
+                html,
+              });
             },
           },
+
         }),
       }),
     }),
