@@ -7,17 +7,22 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 export const auth = betterAuth({
-    database: drizzleAdapter({} as any,{
-      provider: 'pg',
-    }),
-    socialProviders:{
-      github:{
-        clientId: '',
-        clientSecret: '',
-      },
-      google:{
-        clientId: '',
-        clientSecret: '',
-      },
-    }
+  database: drizzleAdapter({} as any, {
+    provider: 'pg',
+  }),
+  trustedOrigins: [],
+  secret: '',
+  emailAndPassword: {
+    enabled: true,
+  },
+  socialProviders: {
+    github: {
+      clientId: '',
+      clientSecret: '',
+    },
+    google: {
+      clientId: '',
+      clientSecret: '',
+    },
+  }
 })
