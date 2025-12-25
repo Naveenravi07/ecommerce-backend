@@ -8,7 +8,7 @@ import { QueueModule } from './common/queue/queue.module';
 import { EmailQueueModule } from './common/queue/email/email-queue.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ZodValidationPipe,ZodSerializerInterceptor } from 'nestjs-zod';
 import { AdminModule } from './admin/admin.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -29,7 +29,7 @@ import { UploadsModule } from './uploads/uploads.module';
   ],
   providers:[
     {
-      provide: APP_GUARD,
+      provide: APP_PIPE,
       useClass: ZodValidationPipe
     },
     {

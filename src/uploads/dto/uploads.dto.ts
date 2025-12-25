@@ -1,8 +1,15 @@
 import { createZodDto } from 'nestjs-zod'
-import {z} from 'zod'
+import { z } from 'zod'
+
+export const uploadPurposesSchema = z.enum([
+  'product_image',
+  'user_avatar',
+])
 
 const preSignUploadSchema = z.object({
-    fileName: z.string(),
-    fileType: z.string(),
+  purpose: uploadPurposesSchema,
+  contentType: z.string().min(1),
+  size: z.number().positive().optional(),
 })
-export class PreSignUploadDto extends createZodDto(preSignUploadSchema){}
+
+export class PreSignUploadDto extends createZodDto(preSignUploadSchema) {}
