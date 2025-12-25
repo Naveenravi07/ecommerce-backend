@@ -6,6 +6,12 @@ import { AuthInfraModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { QueueModule } from './common/queue/queue.module';
 import { EmailQueueModule } from './common/queue/email/email-queue.module';
+import { ProductsModule } from './products/products.module';
+import { CategoriesModule } from './categories/categories.module';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ZodValidationPipe,ZodSerializerInterceptor } from 'nestjs-zod';
+import { AdminModule } from './admin/admin.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -16,6 +22,20 @@ import { EmailQueueModule } from './common/queue/email/email-queue.module';
     EmailQueueModule,
     AuthInfraModule,
     UsersModule,
+    ProductsModule,
+    CategoriesModule,
+    AdminModule,
+    UploadsModule,
   ],
+  providers:[
+    {
+      provide: APP_GUARD,
+      useClass: ZodValidationPipe
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ZodSerializerInterceptor
+    }
+  ]
 })
 export class AppModule {}
