@@ -7,7 +7,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
 
-  @Get('/list-products')
+  @Get('/list')
   listProducts(@Query() data: ListProductsDto) {
     return this.productsService.listProducts(data);
   }

@@ -9,7 +9,7 @@ import {
 } from './schema';
 import { categories as catSchema } from '../categories/schema';
 
-import { eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from 'src/database/database-connection';
 
 @Injectable()
@@ -32,15 +32,11 @@ export class ProductsService {
     const searchLower = search?.toLowerCase();
     const offset = (page - 1) * limit;
     let whereCondition = sql`${products.deleted} = false`;
-    let orderByCondition = sql``;
 
-    const [{ count }] = await this.db
-      .select({
-        count: sql<number>`cast(count(DISTINCT ${products.id}) as int)`,
-      })
-      .from(products)
-      .leftJoin(productVariants, eq(products.id, productVariants.productId))
-      .where(whereCondition);
+    let orderByExpr:
+      | ReturnType<typeof asc>
+      | ReturnType<typeof desc>
+      | undefined;
 
     if (search) {
       whereCondition = sql`${whereCondition} AND (
@@ -74,40 +70,60 @@ export class ProductsService {
     if (sortBy) {
       switch (sortBy) {
         case 'price-high':
-          orderByCondition = sql`${orderByCondition} ORDER BY ${productVariants.price} DESC`;
+          orderByExpr = desc(
+            sql`COALESCE(${productVariants.offerPrice}, ${productVariants.price})`,
+          );
           break;
         case 'price-low':
-          orderByCondition = sql`${orderByCondition} ORDER BY ${productVariants.price} ASC`;
+          orderByExpr = asc(
+            sql`COALESCE(${productVariants.offerPrice}, ${productVariants.price})`,
+          );
           break;
       }
     }
 
-    const result = await this.db
+    const [{ count }] = await this.db
+      .select({
+        count: sql<number>`cast(count(DISTINCT ${products.id}) as int)`,
+      })
+      .from(products)
+      .leftJoin(productVariants, eq(products.id, productVariants.productId))
+      .where(whereCondition);
+
+    const totalItems = Number(count);
+    const totalPages = Math.ceil(totalItems / limit);
+
+    const baseQuery = this.db
       .select()
       .from(products)
       .leftJoin(productVariants, eq(productVariants.productId, products.id))
       .where(whereCondition)
-      .orderBy(orderByCondition)
       .limit(limit)
       .offset(offset);
 
-    console.log(result);
+    const result = await (orderByExpr ? baseQuery.orderBy(orderByExpr) : baseQuery);
+     
     return {
-      products: result,
+      items: result,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(Number(count) / limit),
-        totalItems: Number(count),
+        totalPages,
+        totalItems,
         itemsPerPage: limit,
-        hasNextPage: page * limit < Number(count),
+        hasNextPage: page * limit < totalItems,
         hasPrevPage: page > 1,
       },
       filters: {
-        minPrice: Number(priceMin) ?? 0,
-        maxPrice: Number(priceMax) ?? 0,
+        search: search ?? null,
+        categories: categories ?? null,
+        priceMin: priceMin ?? null,
+        priceMax: priceMax ?? null,
+        sortBy: sortBy ?? null,
       },
     };
   }
-
   
+  async createProduct(){
+    
+  }
 }

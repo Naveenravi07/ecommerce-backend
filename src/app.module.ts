@@ -8,10 +8,12 @@ import { QueueModule } from './common/queue/queue.module';
 import { EmailQueueModule } from './common/queue/email/email-queue.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
-import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
-import { ZodValidationPipe,ZodSerializerInterceptor } from 'nestjs-zod';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { ZodValidationPipe, ZodSerializerInterceptor } from 'nestjs-zod';
 import { AdminModule } from './admin/admin.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { ApiResponseInterceptor } from './common/http/api-response.interceptor';
+import { ApiExceptionFilter } from './common/http/api-exception.filter';
 
 @Module({
   imports: [
@@ -35,6 +37,14 @@ import { UploadsModule } from './uploads/uploads.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: ZodSerializerInterceptor
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ApiResponseInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: ApiExceptionFilter,
     }
   ]
 })

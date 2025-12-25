@@ -28,7 +28,9 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.2.3",
     "@nestjs/throttler": "^6.5.0",
+    "@scalar/express-api-reference": "^0.8.30",
     "@thallesp/nestjs-better-auth": "^2.2.0",
     "better-auth": "^1.4.8",
     "bullmq": "^5.66.2",
@@ -45,6 +47,7 @@
     "resend": "^6.6.0",
     "rxjs": "^7.8.1",
     "sharp": "^0.34.5",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0",
     "zod": "^4.2.1"
   },

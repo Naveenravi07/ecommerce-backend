@@ -11,5 +11,10 @@ const preSignUploadSchema = z.object({
   contentType: z.string().min(1),
   size: z.number().positive().optional(),
 })
-
 export class PreSignUploadDto extends createZodDto(preSignUploadSchema) {}
+
+const presSignUrlResponseSchema = z.object({
+    uploadUrl: z.string(),
+    key: z.string(),
+})
+export class PresSignUrlResponse extends createZodDto(presSignUrlResponseSchema) {}

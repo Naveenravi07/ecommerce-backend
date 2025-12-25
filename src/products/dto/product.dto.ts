@@ -1,6 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
 import {z} from 'zod';
 
+const sizeEnumSchema = z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']);
+
 const listProductsSchema = z.object({
     page: z.number().min(1).default(1),
     limit: z.number().min(1).max(40).default(10),
@@ -14,6 +16,24 @@ export class ListProductsDto extends createZodDto(listProductsSchema) {}
 
 
 const createProductSchema = z.object({
-    
-});
+    title: z.string().min(3).max(100),
+    description: z.string().min(3).max(100),
+    categoryId: z.number(),
+    featured: z.boolean().default(false),
+    shippingfee: z.number().default(0),
+    productDetails: z.record(z.string(), z.string()),
+    colors: z.array(z.object({
+        name: z.string(),
+        hexCode: z.string(),
+        images: z.array(z.string()),
+        primaryImageIndex: z.number().optional(),
+        variants: z.array(z.object({
+            price: z.number(),
+            offerPrice: z.number().optional(),
+            stock: z.number().default(0),
+            size: sizeEnumSchema,
+        }))
+    })),
+    primaryVariantIndex: z.number().optional(),
+})
 export class CreateProductDto extends createZodDto(createProductSchema) {}
