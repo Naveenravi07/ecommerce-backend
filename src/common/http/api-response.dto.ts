@@ -26,18 +26,44 @@ export const apiErrorResponseSchema = <TDataSchema extends ZodTypeAny>(
 });
 
 
-export function apiSuccessResponseDto(dataDtoOrSchema: unknown): any {
-  const dataSchema: ZodTypeAny =
-    (dataDtoOrSchema as any)?.schema ?? (dataDtoOrSchema as any);
+type ZodDtoClass = {
+  schema: ZodTypeAny;
+};
+
+export function apiSuccessResponseDto(
+  dataDtoOrSchema: ZodTypeAny | ZodDtoClass,
+  name?: string,
+) {
+  const dataSchema =
+    'schema' in dataDtoOrSchema
+      ? dataDtoOrSchema.schema
+      : dataDtoOrSchema;
 
   const schema = apiSuccessResponseSchema(dataSchema);
-  return createZodDto(schema as any);
+  const Dto = createZodDto(schema as any);
+
+  Object.defineProperty(Dto, 'name', {
+    value: name ?? `ApiSuccessResponse`,
+  });
+
+  return Dto;
 }
 
-export function apiErrorsResponseDto(dataDtoOrSchema: unknown): any {
-  const dataSchema: ZodTypeAny =
-    (dataDtoOrSchema as any)?.schema ?? (dataDtoOrSchema as any);
 
+export function apiErrorsResponseDto<T extends ZodTypeAny>(
+  dataDtoOrSchema: ZodTypeAny | ZodDtoClass,
+  name?: string,
+) {
+  const dataSchema =
+    'schema' in dataDtoOrSchema
+      ? dataDtoOrSchema.schema
+      : dataDtoOrSchema;
   const schema = apiErrorResponseSchema(dataSchema);
-  return createZodDto(schema as any);
+  const Dto = createZodDto(schema as any);
+
+  Object.defineProperty(Dto, 'name', {
+    value: name ?? `ApiErrorResponse`,
+  });
+
+  return Dto;
 }

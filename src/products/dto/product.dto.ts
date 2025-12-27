@@ -1,3 +1,5 @@
+import { url } from 'inspector';
+import { isPassedLogger } from 'nestjs-pino/params';
 import { createZodDto } from 'nestjs-zod';
 import {z} from 'zod';
 
@@ -9,7 +11,7 @@ const listProductsSchema = z.object({
     search: z.string().optional(),
     priceMin: z.number().min(0).optional(),
     priceMax: z.number().min(0).optional(),
-    categories: z.array(z.string()).optional(),
+    categories: z.array(z.number()).optional(),
     sortBy: z.enum(['price-low','price-high']).optional()
 });
 export class ListProductsDto extends createZodDto(listProductsSchema) {}
@@ -25,15 +27,22 @@ const createProductSchema = z.object({
     colors: z.array(z.object({
         name: z.string(),
         hexCode: z.string(),
-        images: z.array(z.string()),
-        primaryImageIndex: z.number().optional(),
+        images: z.array(z.object({
+            url: z.string().url(),
+            isPrimary: z.boolean().default(false),
+        })),
         variants: z.array(z.object({
             price: z.number(),
             offerPrice: z.number().optional(),
             stock: z.number().default(0),
             size: sizeEnumSchema,
+            isPrimary: z.boolean().default(false),
         }))
     })),
-    primaryVariantIndex: z.number().optional(),
 })
 export class CreateProductDto extends createZodDto(createProductSchema) {}
+
+export const createProductResponseSchema = z.object({
+    id: z.number(),
+});
+export class CreateProductResponseDto extends createZodDto(createProductResponseSchema) {}

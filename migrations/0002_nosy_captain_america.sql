@@ -1,0 +1,3 @@
+ALTER TABLE "product_colors" ADD COLUMN "primary_image_id" integer;--> statement-breakpoint
+ALTER TABLE "product_colors" ADD CONSTRAINT "product_colors_primary_image_id_product_color_images_id_fk" FOREIGN KEY ("primary_image_id") REFERENCES "public"."product_color_images"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "product_color_images" DROP COLUMN "is_primary";

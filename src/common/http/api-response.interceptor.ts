@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Observable, map } from 'rxjs';
-import { ApiSuccessResponse, isApiResponse } from './api-response';
+
 
 @Injectable()
 export class ApiResponseInterceptor implements NestInterceptor {
@@ -23,28 +23,12 @@ export class ApiResponseInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      map((data) => {
-        if (isApiResponse(data)) {
-          if (!requestId) return data;
-
-          const d = data as any;
-          if (d.requestId) return data;
-
-          return {
-            ...d,
-            requestId,
-          };
-        }
-
-        const body: ApiSuccessResponse<unknown> = {
-          success: true,
-          data,
-          requestId,
-          timestamp: new Date().toISOString(),
-        };
-
-        return body;
-      }),
+      map((data) => ({
+        success: true,
+        data,
+        requestId,
+        timestamp: new Date().toISOString(),
+      })),
     );
   }
 }

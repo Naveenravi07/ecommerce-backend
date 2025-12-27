@@ -5,7 +5,7 @@ import { Pool } from 'pg';
 import {drizzle} from 'drizzle-orm/node-postgres'
 import { LoggerModule } from 'src/logger/logger.module';
 import { PinoLogger } from 'nestjs-pino';
-import * as AuthSchema from 'src/auth/schema';
+import * as schema from './schema'
 
 @Module({
     imports: [LoggerModule],
@@ -26,9 +26,7 @@ import * as AuthSchema from 'src/auth/schema';
                 }
 
                 return drizzle(pool,{
-                    schema: {
-                        ...AuthSchema
-                    },
+                    schema: schema,
                 })
             },
             inject: [ConfigService,PinoLogger],

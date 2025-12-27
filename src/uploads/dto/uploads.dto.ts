@@ -17,4 +17,4 @@ const presSignUrlResponseSchema = z.object({
     uploadUrl: z.string(),
     key: z.string(),
 })
-export class PresSignUrlResponse extends createZodDto(presSignUrlResponseSchema) {}
+export class PresSignUrlResponseDto extends createZodDto(presSignUrlResponseSchema) {}

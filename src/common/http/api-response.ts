@@ -22,23 +22,7 @@ export type ApiErrorResponse = {
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-export function isApiResponse(value: unknown): value is ApiResponse<unknown> {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Record<string, unknown>;
-  return v.success === true || v.success === false;
-}
 
-export function apiOk<T>(
-  data: T,
-  options?: { meta?: Record<string, unknown> },
-): ApiSuccessResponse<T> {
-  return {
-    success: true,
-    data,
-    timestamp: new Date().toISOString(),
-    ...(options?.meta ? { meta: options.meta } : {}),
-  };
-}
 
 export function httpStatusToCode(status: number): string {
   switch (status) {

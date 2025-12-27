@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { S3Service } from 'src/common/s3/s3.service';
-import { uploadPurposesSchema,PreSignUploadDto, PresSignUrlResponse } from './dto/uploads.dto';
+import { uploadPurposesSchema,PreSignUploadDto, PresSignUrlResponseDto } from './dto/uploads.dto';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -23,7 +23,7 @@ export class UploadsService {
         private readonly logger: PinoLogger
     ){}
 
-    async preSignUpload(dto: PreSignUploadDto): Promise<PresSignUrlResponse>{
+    async preSignUpload(dto: PreSignUploadDto): Promise<PresSignUrlResponseDto>{
         const {purpose, contentType, size} = dto;
         const extension = contentType.split("/")[1];
 
