@@ -27,7 +27,9 @@ import { randomUUID } from 'crypto';
 
         redact: {
           paths: [
-            'req.headers.authorization',          ],
+            'req.headers.authorization',
+            'req.cookies',
+          ],
           censor: '[REDACTED]',
         },
       },

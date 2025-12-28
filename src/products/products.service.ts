@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto, CreateProductResponseDto, ListProductsDto } from './dto/product.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from 'src/database/schema';
@@ -119,10 +119,10 @@ export class ProductsService {
       .select({ id: schema.categories.id })
       .from(schema.categories)
       .where(eq(schema.categories.id, data.categoryId))
-      .limit(1);
+      .limit(1)
 
     if (!categoryCheck) {
-      throw new Error("Category not found");
+      throw new NotFoundException('Category not found');
     }
 
     let prodId: number;
@@ -141,7 +141,7 @@ export class ProductsService {
         .returning({ id: schema.products.id });
 
       if (!productData[0]?.id) {
-        throw new Error("Failed to create product");
+        throw new BadRequestException('Failed to create product');
       }
       prodId = productData[0].id;
 
@@ -158,7 +158,7 @@ export class ProductsService {
           .returning({ id: schema.productColors.id });
 
         if (!colorData[0]?.id) {
-          throw new Error("Failed to create product color");
+          throw new BadRequestException('Failed to create product color');
         }
 
         let primaryImageId: number | null = null;
@@ -174,11 +174,11 @@ export class ProductsService {
               .returning({ id: schema.productColorImages.id });
 
             if (!result[0]?.id) {
-              throw new Error("Failed to create image");
+              throw new BadRequestException('Failed to create image');
             }
 
             if (img.isPrimary && primaryImageId !== null) {
-              throw new Error("Multiple primary images provided for a color");
+              throw new BadRequestException("Multiple primary images provided for a color");
             }
 
             if (img.isPrimary) {
@@ -188,7 +188,7 @@ export class ProductsService {
         );
 
         if (!primaryImageId) {
-          throw new Error("Exactly one primary image is required per color");
+          throw new BadRequestException("Exactly one primary image is required per color");
         }
 
         await tx
@@ -212,11 +212,11 @@ export class ProductsService {
               .returning({ id: schema.productVariants.id })
 
             if (!result[0]?.id) {
-              throw new Error("Failed to create variant");
+              throw new BadRequestException("Failed to create variant");
             }
 
             if (variant.isPrimary && primaryVariantId !== null) {
-              throw new Error("Multiple primary variants provided");
+              throw new BadRequestException("Multiple primary variants provided");
             }
 
             if (variant.isPrimary) {
@@ -227,7 +227,7 @@ export class ProductsService {
       }
 
       if (!primaryVariantId) {
-        throw new Error("Exactly one primary variant is required");
+        throw new BadRequestException("Exactly one primary variant is required");
       }
 
       await tx

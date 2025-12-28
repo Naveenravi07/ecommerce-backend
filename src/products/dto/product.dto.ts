@@ -37,8 +37,8 @@ const createProductSchema = z.object({
             stock: z.number().default(0),
             size: sizeEnumSchema,
             isPrimary: z.boolean().default(false),
-        }))
-    })),
+        })).min(1)
+    })).min(1),
 })
 export class CreateProductDto extends createZodDto(createProductSchema) {}
 

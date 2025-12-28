@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DATABASE_CONNECTION } from 'src/database/database-connection';
 import * as schema from 'src/database/schema'; // Import as namespace
@@ -21,7 +21,7 @@ export class CategoriesService {
             .limit(1);
         
         if (existingCategory.length > 0) {
-            throw new Error('Category with the same name already exists');
+            throw new BadRequestException('Category with the same name already exists');
         }
         
         const result = await this.db
