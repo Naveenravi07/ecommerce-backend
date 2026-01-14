@@ -22,6 +22,13 @@
       "when": 1766724862902,
       "tag": "0002_nosy_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768410367550,
+      "tag": "0003_panoramic_yellowjacket",
+      "breakpoints": true
     }
   ]
 }

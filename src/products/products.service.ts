@@ -1,7 +1,13 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateProductDto, CreateProductResponseDto, ListProductsDto } from './dto/product.dto';
+import {
+  CreateProductDto,
+  CreateProductResponseDto,
+  GetProductResponseDto,
+  ListProductsDto,
+  ListProductsResponseDto,
+} from './dto/product.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from 'src/database/schema';
+import * as schema from 'src/database/schema'; 
 import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from 'src/database/database-connection';
 
@@ -12,7 +18,7 @@ export class ProductsService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) { }
 
-  async listProducts(data: ListProductsDto) {
+  async listProducts(data: ListProductsDto): Promise<ListProductsResponseDto> {
     const { page, limit, search, priceMin, priceMax, categories, sortBy } =
       data;
 
@@ -83,18 +89,71 @@ export class ProductsService {
 
     const baseQuery = this.db
       .select({
-
+        id: schema.products.id,
+        title: schema.products.title,
+        description: schema.products.description,
+        shippingfee: schema.products.shippingfee,
+        featured: schema.products.featured,
+        createdAt: schema.products.createdAt,
+        updatedAt: schema.products.updatedAt,
+        categoryId: schema.categories.id,
+        categoryName: schema.categories.name,
+        price: schema.productVariants.price,
+        offerPrice: schema.productVariants.offerPrice,
+        stock: schema.productVariants.stock,
+        primaryImageId: schema.productColors.primaryImageId,
       })
       .from(schema.products)
-      .leftJoin(schema.productVariants, eq(schema.productVariants.productId, schema.products.id))
+      .leftJoin(schema.productVariants, eq(schema.productVariants.id, schema.products.primaryVariantId))
+      .leftJoin(schema.productColors, eq(schema.productColors.id, schema.productVariants.colorId))
+      .leftJoin(schema.categories, eq(schema.categories.id, schema.products.categoryId))
       .where(whereCondition)
       .limit(limit)
       .offset(offset);
 
-    const result = await (orderByExpr ? baseQuery.orderBy(orderByExpr) : baseQuery);
+    const rawResult = await (orderByExpr ? baseQuery.orderBy(orderByExpr) : baseQuery);
+
+    const productIds = rawResult.map((p) => p.id);
+    
+    const images = productIds.length > 0
+      ? await this.db
+          .select({
+            productId: schema.productColors.productId,
+            imageId: schema.productColorImages.id,
+            url: schema.productColorImages.url,
+          })
+          .from(schema.productColorImages)
+          .innerJoin(schema.productColors, eq(schema.productColors.id, schema.productColorImages.colorId))
+          .where(inArray(schema.productColors.productId, productIds))
+      : [];
+
+    const imagesByProduct = images.reduce((acc, img) => {
+      if (!acc[img.productId]) acc[img.productId] = [];
+      acc[img.productId].push({ id: img.imageId, url: img.url });
+      return acc;
+    }, {} as Record<number, { id: number; url: string }[]>);
+
+    const items = rawResult.map((product) => ({
+      id: product.id,
+      title: product.title,
+      description:
+        product.description.length > 100
+          ? product.description.substring(0, 100) + '...'
+          : product.description,
+      price: product.price ? parseFloat(product.price) : 0,
+      shippingfee: product.shippingfee,
+      category: { id: product.categoryId, name: product.categoryName },
+      featured: product.featured,
+      stock: product.stock,
+      images: imagesByProduct[product.id] ?? [],
+      primaryImageId: product.primaryImageId,
+      offerPrice: product.offerPrice ? parseFloat(product.offerPrice) : null,
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    }));
 
     return {
-      items: result,
+      items,
       pagination: {
         currentPage: page,
         totalPages,
@@ -113,6 +172,8 @@ export class ProductsService {
     };
   }
 
+
+  
   async createProduct(data: CreateProductDto): Promise<CreateProductResponseDto> {
 
     const [categoryCheck] = await this.db
@@ -239,4 +300,115 @@ export class ProductsService {
     return { id: prodId! }
   }
 
+  async getProduct(id: number): Promise<GetProductResponseDto> {
+    const [product] = await this.db
+      .select({
+        id: schema.products.id,
+        title: schema.products.title,
+        description: schema.products.description,
+        shippingfee: schema.products.shippingfee,
+        featured: schema.products.featured,
+        productDetails: schema.products.productDetails,
+        primaryVariantId: schema.products.primaryVariantId,
+        createdAt: schema.products.createdAt,
+        updatedAt: schema.products.updatedAt,
+        categoryId: schema.categories.id,
+        categoryName: schema.categories.name,
+      })
+      .from(schema.products)
+      .leftJoin(schema.categories, eq(schema.categories.id, schema.products.categoryId))
+      .where(sql`${schema.products.id} = ${id} AND ${schema.products.deleted} = false`)
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const colors = await this.db
+      .select({
+        id: schema.productColors.id,
+        name: schema.productColors.name,
+        hexCode: schema.productColors.hexCode,
+        primaryImageId: schema.productColors.primaryImageId,
+      })
+      .from(schema.productColors)
+      .where(eq(schema.productColors.productId, id));
+
+    const colorIds = colors.map((c) => c.id);
+
+    let images: { id: number; colorId: number; url: string }[] = [];
+    let variants: { id: number; colorId: number | null; size: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL" | null; price: string; offerPrice: string | null; stock: number }[] = [];
+
+    if (colorIds.length > 0) {
+      [images, variants] = await Promise.all([
+        this.db
+          .select({
+            id: schema.productColorImages.id,
+            colorId: schema.productColorImages.colorId,
+            url: schema.productColorImages.url,
+          })
+          .from(schema.productColorImages)
+          .where(inArray(schema.productColorImages.colorId, colorIds)),
+        this.db
+          .select({
+            id: schema.productVariants.id,
+            colorId: schema.productVariants.colorId,
+            size: schema.productVariants.size,
+            price: schema.productVariants.price,
+            offerPrice: schema.productVariants.offerPrice,
+            stock: schema.productVariants.stock,
+          })
+          .from(schema.productVariants)
+          .where(inArray(schema.productVariants.colorId, colorIds)),
+      ]);
+    }
+
+    const imagesByColor = images.reduce(
+      (acc, img) => {
+        if (!acc[img.colorId]) acc[img.colorId] = [];
+        acc[img.colorId].push({ id: img.id, url: img.url });
+        return acc;
+      },
+      {} as Record<number, { id: number; url: string }[]>,
+    );
+
+    type SizeEnum = "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL";
+
+    const variantsByColor = variants.reduce(
+      (acc, v) => {
+        if (!v.colorId) return acc;
+        if (!acc[v.colorId]) acc[v.colorId] = [];
+        acc[v.colorId].push({
+          id: v.id,
+          size: v.size as SizeEnum,
+          price: parseFloat(v.price),
+          offerPrice: v.offerPrice ? parseFloat(v.offerPrice) : null,
+          stock: v.stock,
+        });
+        return acc;
+      },
+      {} as Record<number, { id: number; size: SizeEnum; price: number; offerPrice: number | null; stock: number }[]>,
+    );
+
+    return {
+      id: product.id,
+      title: product.title,
+      description: product.description,
+      shippingfee: product.shippingfee,
+      featured: product.featured,
+      productDetails: product.productDetails,
+      category: { id: product.categoryId, name: product.categoryName },
+      primaryVariantId: product.primaryVariantId,
+      colors: colors.map((color) => ({
+        id: color.id,
+        name: color.name,
+        hexCode: color.hexCode,
+        primaryImageId: color.primaryImageId,
+        images: imagesByColor[color.id] ?? [],
+        variants: variantsByColor[color.id] ?? [],
+      })),
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    };
+  }
 }
